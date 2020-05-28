@@ -1,0 +1,110 @@
+#define trigPin1 11 //ultrasonic sensor 1 trigger 
+#define echoPin1 13 //ultrasonic sensor 1 echo 
+#define trigPin2 10 //ultrasonic sensor 2 trigger  
+#define echoPin2 12 //ultrasonic sensor 2 echo 
+
+//global variables
+long Time; //long variable type for Time sensor 1
+long Time2; //long variable type for Time from sensor 2
+int distance; //int variable type for distance sensor 1
+int distance2; //int variable type for distance for sensor 2
+unsigned long startTime; // timer for pet wait time
+
+
+void setup() {
+  // put your setup code here, to run once:
+  Serial.begin (9600);
+  pinMode(trigPin1, OUTPUT);// set trig pin on sensor 1 as output
+  pinMode(echoPin1, INPUT); // set echo pin on sensor 1 as an input
+  pinMode(trigPin2, OUTPUT);// set trig pin on sensor 2 as output
+  pinMode(echoPin2, INPUT); // set echo pin on sensor 2 as an input
+  pinMode(9, OUTPUT); // output of the servo motor
+}
+
+void loop() {
+  // put your main code here, to run repeatedly:
+  // sensor 1 code (sensor tracking the food in the bowl and when to dispense)
+  digitalWrite(trigPin1, LOW); // clears the trigger pin to 0
+  delayMicroseconds(2); //delay 2 ms
+  digitalWrite(trigPin1, HIGH); // set trigger to high
+  delayMicroseconds(10); // 10ms delay
+  digitalWrite(trigPin1, LOW);// trigger to low
+
+  Time = pulseIn(echoPin1, HIGH);//reads the echo pin, returns soundwave travel time for sensor 1
+
+  //pulseIn function resturns the length of the pulse in microseconds
+  // 1 pulse = starts timing from high to low
+
+  distance = (.0344 / 2) * Time; //distance = rate * time
+
+  // .0344 cm/microsecond = speed of sound
+  //divided by 2 because the sound wave needs to travel foward and bounce backward, so we need the direct distance
+  //equation returns the distance in cm 
+
+  // servo motor code
+
+  while (distance >= 90) { // if the distance from the sensor to 3/4 down the bowl, enter loop
+    // ensures that food gets dispensed only when there is nothing left, or is running out
+
+    digitalWrite(9, HIGH); // pin 9 high
+    delayMicroseconds(1425); //2000 is 180 degrees, 850 is 0 degrees, sets servo to 90 deg
+    digitalWrite(9, LOW); // pin 9 low
+    delay(20); //delay 20 ms
+
+    digitalWrite(9, HIGH);
+    delayMicroseconds(850); // servo back to zero degrees/stop dispensing food
+    digitalWrite(9, LOW);
+    delay(20);//delay 20 ms
+  }
+
+  // Ultrasonic sensor 2 code (Pet tracking - live feed)
+
+  digitalWrite(trigPin2, LOW); // clears the trigger pin to 0
+  delayMicroseconds(2); //delay 2 ms
+  digitalWrite(trigPin2, HIGH); // set trigger to high
+  delayMicroseconds(10); // 10 ms delay
+  digitalWrite(trigPin2, LOW);// trigger to low
+
+  Time2 = pulseIn(echoPin2, HIGH);//reads the echo pin, returns soundwave travel time for sensor 2
+  //pulseIn function resturns the length of the pulse in microseconds
+  // 1 pulse = starts timing from high to low
+
+  distance2 = (.0344 / 2) * Time2; //distance = rate * time
+  //distance the pet is to the food station
+
+
+  //code for pet tease with food/attention grab
+
+
+  while (distance2 <= 60 && distance2 >= 5) { // while the pet is within somewhat close distance of the food station but not eating
+
+    startTime = millis(); // start timer (return ms) when the pet is in range
+    if (millis - startTime > 10000 && distance2 <= 60) { // if the pet is waiting for 10 seconds, and the pet is inside the distance -> enter loop
+
+      /*
+        point of this code is to "tease/attract" the pet, as there is food in the bowl and
+        the pet is near the station anyway and not eating, so the angle of the motor will be 
+        less, so less food is dropped.
+      */
+      digitalWrite(9, HIGH);
+      delayMicroseconds(1041); // servo  to 30 degrees/ dispensing food
+      // 1425 is 90 deg, so 1425-850 = 575 (add 575 for 90 deg)=>
+      // 575/3= 191 (add 191 for 30 deg) -> 191+850 = 1041 delay value
+      digitalWrite(9, LOW);
+      delay(20);//delay 20 ms
+
+      digitalWrite(9, HIGH);
+      delayMicroseconds(850); // servo back to zero degrees/stop dispensing food
+      digitalWrite(9, LOW);
+      delay(20); //delay 20 ms
+
+      delay (120000);//delay 2 minutes for pet to eat
+
+    }
+
+    break; // break out of the while loop
+  }
+
+  String Dstring = String(distance) + "," + String(distance2); //putting values into one string
+  Serial.println(Dstring); //Observe the readings on the serial monitor
+}
