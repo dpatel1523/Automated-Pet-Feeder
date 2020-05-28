@@ -1,0 +1,40 @@
+import processing.serial.*; // add the serial library
+Serial myPort; // define a serial port object to monitor
+int distance; //initialize sensor one distance
+void setup() 
+{
+  println(Serial.list()); // list all available serial ports
+  myPort = new Serial(this, Serial.list()[2], 9600); // define input port
+  myPort.clear(); // clear the port of any initial junk
+  size(200, 200);//window size
+}
+
+void draw () {
+  while (myPort.available () > 0) { // make sure port is open
+    String inString = myPort.readStringUntil('\n'); // read input string
+
+    if (inString != null) { // ignore null strings
+      inString = trim(inString); // trim off any whitespace
+      String[] xyzaRaw = splitTokens(inString, ","); // extract x & y into an array
+      // proceed only if correct # of values extracted from the string:
+
+      background(125);
+      if (xyzaRaw.length ==2)
+      {
+        distance = int(xyzaRaw[0]); // first element of the string
+      }
+    }
+
+    // code for ultrasonic sensor 1 (Tracking food in the bowl)
+
+    if (distance >= 90) { //distance to 3/4 down the bowl (shows the bowl isnt filled)
+
+      text("The bowl has not been filled yet", 10, 100);//string and coordinates to display
+    } 
+    
+    else { // run if the disntance is shorter then 90... so bowl is filled up
+
+      text("The bowl is filled ", 10, 100);//string and coordinates to display
+    }
+  }
+}
