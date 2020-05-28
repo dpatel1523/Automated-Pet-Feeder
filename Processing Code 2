@@ -1,0 +1,87 @@
+import processing.serial.*; // add the serial library
+Serial myPort; // define a serial port object to monitor
+
+// Define initial "time" coordinates of cursor location 
+int distance2; //initiialize second sensor distance
+int x = 0;//initialize x axis value when plotting
+void setup() {
+  size(1200, 612); // set the window size
+  println(Serial.list()); // list all available serial ports
+  myPort = new Serial(this, Serial.list()[2], 9600); // define input port
+  myPort.clear(); // clear the port of any initial junk
+
+  background(125); //background to gray
+
+  // lines for distance on the display window
+  line(0, 39, 1200, 39); // pet is not visible, line(x1, y1, x2, y2) command 
+  line(0, 141, 1200, 141); // pet is far
+  line(0, 243, 1200, 243);// pet is not very close
+  line(0, 345, 1200, 345);// pet is mildly close
+  line(0, 447, 1200, 447);// pet is close
+  line(0, 550, 1200, 550); // pet is next to bowl
+
+  // text and labels for lines
+  // Full range of Ultrasonic Sensor is 2cm to 450 cm
+  textSize(32);
+  fill (0, 0, 0);
+  //the distance ranges are commented next to their respective label, with the refrence point at sensor (x=0, +x direction to the right)
+  text("Next to Bowl", 10, 546); // distance 0- 20 cm from the sensor ( for refrence: ~8 inches from the sensor, 6 from the bowl)
+  text("Close to bowl", 10, 443); //21-100 cm
+  text("Mildly Close", 10, 341); // 101-200 cm
+  text("Not very Close", 10, 239); //201-300 cm
+  text("Far", 10, 137); //301 - 400 cm
+  text("Not Visibile", 10, 35); //401+ cm
+}
+void draw () {
+
+  while (myPort.available () > 0) { // make sure port is open
+    String inString = myPort.readStringUntil('\n'); // read input string
+
+    if (inString != null) { // ignore null strings
+      inString = trim(inString); // trim off any whitespace
+      String[] xyzaRaw = splitTokens(inString, ","); // extract x & y into an array
+      // proceed only if correct # of values extracted from the string:
+
+      if (xyzaRaw.length ==2)
+      {
+        distance2 = int(xyzaRaw[1]); // second element of the string
+      }
+    }
+
+    // Live feed of ultrasonic sensor 2 (Tracks pet location)
+
+    int y = distance2; // intitializes and declares y
+    y = int((float)y*((float)height/1024.0));//color coding y to change with the y axis valules
+    fill(255, y*(2.5), y*(2.5));//printing color coding ellipses
+    ellipse(x, 550-(distance2*(2.8)), 12, 12); //height correction for the distance y values, basically extends the range the full length of the dislay window
+    println(distance2);  //prints the distance in the command window at the bottom of the screen 
+    x = x + 5;//moves the x value
+
+    // Set the bounds inside with the cursor can translate
+    // This prevents the cursor from moving off the screen
+    //resets the ellipse location and all the labels
+    if (x > 1200) {
+      //repeat the labels for the window  
+      background(125); // set to gray level 125
+      line(0, 39, 1200, 39); // pet is not visible, line(x1, y1, x2, y2) command 
+      line(0, 141, 1200, 141); // pet is far
+      line(0, 243, 1200, 243);// pet is not very close close
+      line(0, 345, 1200, 345);// pet is mildly close
+      line(0, 447, 1200, 447);// pet is close
+      line(0, 550, 1200, 550); // pet is next to bowl
+
+      // text and labels for lines
+      textSize(32);
+      fill (0, 0, 0);
+      //the distance ranges are commented next to their respective label,  with the refrence point at sensor (x=0)
+      text("Next to Bowl", 10, 546); // distance 0- 20 cm from the sensor ( for refrence: ~8 inches from the sensor, 6 from the bowl)
+      text("Close to bowl", 10, 443); //21-100 cm
+      text("Mildly Close", 10, 341); // 101-200 cm
+      text("Not very Close", 10, 239); //201-300 cm
+      text("Far", 10, 137); //301 - 400 cm
+      text("Not Visibile", 10, 35); //401+ cm
+
+      x = 0; //sets x location all the way to the left
+    }
+  }
+}
